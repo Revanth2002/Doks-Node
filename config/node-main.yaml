@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodeapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodeapp
+  template:
+    metadata:
+      labels:
+        app: nodeapp
+    spec:
+      containers:
+      - name: nodeapp
+        image: ndrevanth09/softdocker
+        # image: ndrohith09/nodeapp
+        ports:
+          - containerPort: 3000
+        env:
+          - name: PG_HOST
+            value: pgdb
+          - name: PG_DATABASE
+            value: postgres
+          - name: PG_USER
+            value: postgres
+          - name: PG_PASSWORD
+            value: postgres 
+          # - name: PG_PORT
+          #   value: 5432
+          - name: DATABASE_URL
+            value: postgresql://postgres:postgres@postgres:5432/postgres
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeapp
+spec:
+  type: LoadBalancer
+  selector:
+    app: nodeapp 
+  ports:
+    - port: 3000
+      targetPort: 3000
+

@@ -1,0 +1,105 @@
+name: Docker Image CI/CD automation with DO
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'config/**'
+      - 'server.py'
+      - 'Dockerfile'
+      - '.github/workflows/**'
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  push_to_registry:
+    name: Push Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+      
+      - name: Login to Docker hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata (tags,label) for Docker
+        id: meta
+        uses: docker/metadata-action@v3    
+        with:
+          images: my-docker-hub-namespace/my-docker-hub-repository
+      
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: ndrevanth09/softdocker:latest 
+
+  build_push_image:
+
+    runs-on: ubuntu-latest
+    needs: push_to_registry
+
+    steps:
+    - name: Checkout master
+      uses: actions/checkout@main
+
+    - name: Install docl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Remove all previous image in container registry
+      run: docker rmi $(docker images -a -q) 
+
+    - name: Build container image
+      run: docker build -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/python-example:$(echo $GITHUB_SHA | head -c7) .
+    
+    - name: Log in to DigitalOcean Container Registry with short-lived credentials
+      run: doctl registry login --expiry-seconds 1200
+  
+    - name: Push image to DigitalOcean Container Registry
+      run: docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/python-example:$(echo $GITHUB_SHA | head -c7)
+
+  deploy_kubernetes:
+
+    runs-on: ubuntu-latest
+    needs: build_push_image
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@main
+  
+      - name: Install docl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: View kubernetes cluster list
+        run: doctl kubernetes cluster list
+
+      - name: Save DigitalOcean kubeconfig with short-lived credentials
+        run: doctl kubernetes cluster kubeconfig save ${{ secrets.CLUSTER_NAME }}
+       
+      - name: Create a Postgres ConfigMap in DigitalOcean Kubernetes
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/postgres-configmap.yaml
+      
+      - name: Deploy Postgres PV and PVC to DigitalOcean Kubernetes
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/postgres-storage.yaml
+  
+      - name: Postgres deployment in a container
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/postgres-deployment.yaml
+
+      - name: Postgres service in a container
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/postgres-service.yaml
+  
+      - name: Node main app deployment service
+        run: kubectl apply -f $GITHUB_WORKSPACE/config/node-main.yaml
+      
+      - name: Pods of DigitalOcean Kubernetes
+        run: kubectl get all      
