@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: nodeapp
-        image: ndrevanth09/softdocker
-        # image: ndrohith09/nodeapp
+        image: registry.digitalocean.com/softdocker/python-example:latest
+        # image: ndrohith09/nodeapp  ndrevanth09/softdocker:latest
         ports:
           - containerPort: 3000
         env:
