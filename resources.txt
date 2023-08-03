@@ -1,0 +1,31 @@
+1.kubectl apply -f config/pg-config.yml
+2.kubectl create -f config/pg-storage.yaml
+3.kubectl create -f config/pg-deployment.yaml 
+4.kubectl create -f config/node-main.yaml 
+
+------------
+To delete:
+# kubectl delete service postgres 
+# kubectl delete deployment postgres
+# kubectl delete configmap postgres-config
+# kubectl delete persistentvolumeclaim postgres-pv-claim
+# kubectl delete persistentvolume postgres-pv-volume
+-----------
+
+doctl kubernetes cluster list
+doctl kubernetes cluster kubeconfig save <cluster_name>
+
+---------------------------------
+
+AKS setup config :-
+-az login
+-az aks get-credentials --resource-group garuda --name softdocker-cluster
+-kubectl get nodes
+-kubectl apply -f postgres/postgres-configmap.yaml
+-kubectl apply -f postgres/postgres-storage.yaml
+-kubectl apply -f postgres/postgres-deployment.yaml
+-kubectl apply -f postgres/postgres-service.yaml
+-kubectl apply -f node-dummy.yaml
+-kubectl get all
+
+

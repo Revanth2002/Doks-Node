@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NodeJs Application</title>
+    </head>
+    <body>
+        <h1>NodeJs Application Deployed Via DOKS and GH actions</h1>
+        <a href="/home" >Go to Next Page</a>
+        <hr/>
+        <h1>Employee List</h1>
+        <hr/>
+    <ul>
+        <% result.forEach(i => { %>
+            <li>
+                <h2><%= i.id %></h2>
+                <p><%= i.name %></p>
+                <p><strong>Dept:</strong> <%= i.department %></p>
+            </li>
+        <% }); %>
+    </ul>
+    </body>
+</html>
